@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>مدير المهام</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
+    <style>
+        :root {
+            --app-bg: linear-gradient(135deg, #223047 0%, #3498db 100%);
+            --app-text: #ffffff;
+            --muted-text: rgba(255, 255, 255, 0.78);
+            --card-surface: rgba(255, 255, 255, 0.12);
+            --card-border: rgba(255, 255, 255, 0.18);
+            --shadow-lg: 0 18px 45px rgba(0, 0, 0, 0.18);
+            --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.14);
+            --shadow-sm: 0 6px 16px rgba(0, 0, 0, 0.12);
+            --radius-xl: 24px;
+            --radius-lg: 18px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+            --task-font-color: #ffffff;
+            --task-font-family: 'Tajawal', Arial, sans-serif;
+            --task-font-size: 18px;
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --surface-light: #ffffff;
+            --text-dark: #101828;
+            --text-muted-dark: #667085;
+            --border-light: #e5e7eb;
+            --tab-bg: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; }
+        html, body { margin: 0; min-height: 100%; }
+
+        body {
+            font-family: 'Tajawal', Arial, sans-serif;
+            background: var(--app-bg);
+            color: var(--app-text);
+            transition: background 0.35s ease, color 0.35s ease;
+            padding: 20px;
+        }
+
+        body.light-theme {
+            --app-text: #111827;
+            --muted-text: rgba(17, 24, 39, 0.72);
+            --card-surface: rgba(255, 255, 255, 0.82);
+            --card-border: rgba(15, 23, 42, 0.08);
+            --tab-bg: rgba(15, 23, 42, 0.05);
+        }
+
+        .app-shell { width: 100%; max-width: 980px; margin: 0 auto; }
+
+        .app-title {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+            user-select: none;
+        }
+
+        .app-title h1 {
+            margin: 0;
+            font-size: clamp(1.25rem, 2.6vw, 1.6rem);
+            letter-spacing: 0.2px;
+        }
+
+        .app-title p {
+            margin: 0;
+            color: var(--muted-text);
+            font-size: clamp(0.9rem, 1.8vw, 1rem);
+        }
+
+        @media (max-width: 768px) {
+            .app-title { margin-bottom: 10px; }
+        }
+
+        .app-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: var(--shadow-lg);
+            border-radius: 28px;
+            padding: 22px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: background 0.35s ease, border-color 0.35s ease;
+        }
+
+        body.light-theme .app-card {
+            background: rgba(255, 255, 255, 0.88);
+            border-color: rgba(17, 24, 39, 0.08);
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+
+        .icon-btn {
+            border: none;
+            background: rgba(255, 255, 255, 0.14);
+            color: inherit;
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: transform 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+            box-shadow: var(--shadow-sm);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover { transform: translateY(-1px); background: rgba(255, 255, 255, 0.22); }
+        body.light-theme .icon-btn { background: rgba(15, 23, 42, 0.06); }
+        body.light-theme .icon-btn:hover { background: rgba(15, 23, 42, 0.1); }
+
+        .groups-tabs-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .groups-tabs {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 4px;
+        }
+        .groups-tabs::-webkit-scrollbar { display: none; }
+
+        .group-tab {
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: inherit;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .group-tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        body.light-theme .group-tab {
+            background: rgba(15, 23, 42, 0.05);
+            border-color: rgba(15, 23, 42, 0.1);
+            color: var(--text-dark);
+        }
+        body.light-theme .group-tab.active { background: var(--primary); color: #fff; }
+
+        .group-tab .delete-group {
+            font-size: 1.2rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            line-height: 1;
+            margin-right: 4px;
+        }
+        .group-tab .delete-group:hover { opacity: 1; color: #fff; }
+
+        .smart-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 4px;
+            margin-bottom: 18px;
+            gap: 4px;
+        }
+
+        body.light-theme .smart-tabs {
+            background: rgba(15, 23, 42, 0.05);
+            border-color: rgba(15, 23, 42, 0.1);
+        }
+
+        .smart-tab {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 8px;
+            border: none;
+            border-radius: 12px;
+            background: transparent;
+            color: inherit;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .smart-tab .count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            min-width: 24px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        body.light-theme .smart-tab .count {
+            background: rgba(15, 23, 42, 0.1);
+            color: var(--text-dark);
+        }
+
+        .smart-tab.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .smart-tab.active .count {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+        }
+
+        .smart-tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        body.light-theme .smart-tab:hover:not(.active) {
+            background: rgba(15, 23, 42, 0.1);
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .task-input {
+            width: 100%;
+            border: 1px solid transparent;
+            border-radius: 18px;
+            padding: 16px 18px;
+            font-size: 1rem;
+            outline: none;
+            background: rgba(255, 255, 255, 0.92);
+            color: #111827;
+            transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease;
+            font-family: 'Tajawal', Arial, sans-serif;
+        }
+        .task-input:focus {
+            border-color: rgba(59, 130, 246, 0.65);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14);
+        }
+
+        .add-btn {
+            border: none;
+            border-radius: 18px;
+            padding: 0 20px;
+            min-width: 110px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.22s ease, opacity 0.22s ease;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.28);
+            font-family: 'Tajawal', Arial, sans-serif;
+        }
+        .add-btn:hover { transform: translateY(-1px); }
+        .add-btn:active { transform: scale(0.98); }
+
+        .sortable-list { min-height: 90px; }
+
+        .task-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin: 12px 0;
+            padding: 16px 18px;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: var(--shadow-md);
+            cursor: grab;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        .task-card.completed { filter: saturate(0.9); }
+        .task-card.editing { 
+            cursor: default; 
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+            -webkit-touch-callout: default;
+        }
+
+        .task-main { display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 0; }
+
+        .status-btn {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--task-font-color);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, background 0.22s ease, color 0.22s ease;
+            margin-top: 2px;
+        }
+        .status-btn:hover { transform: scale(1.05); background: rgba(255, 255, 255, 0.28); }
+        .task-card.completed .status-btn { background: rgba(34, 197, 94, 0.2); color: #ffffff; }
+
+        .task-content { flex: 1; min-width: 0; text-align: right; }
+
+        .task-text {
+            display: block;
+            font-family: var(--task-font-family);
+            color: var(--task-font-color);
+            font-size: var(--task-font-size);
+            line-height: 1.8;
+            word-break: break-word;
+            outline: none;
+            border-radius: 8px;
+            padding: 2px 0;
+            transition: color 0.2s ease, opacity 0.2s ease;
+        }
+
+        .task-text[contenteditable="true"] {
+            cursor: text;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .task-card.completed .task-text { text-decoration: line-through; opacity: 0.78; }
+
+        .task-meta { margin-top: 6px; font-size: 0.85rem; color: rgba(255, 255, 255, 0.82); }
+        body.light-theme .task-meta { color: rgba(17, 24, 39, 0.68); }
+
+        .task-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.18);
+            color: var(--task-font-color);
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.22s ease, color 0.22s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .action-btn:hover { transform: translateY(-1px); background: rgba(255, 255, 255, 0.28); }
+        .action-btn.delete-btn:hover { color: #fff; background: rgba(239, 68, 68, 0.42); }
+        .action-btn.edit-btn:hover { color: #fff; background: rgba(59, 130, 246, 0.42); }
+
+        footer { margin-top: 24px; text-align: center; color: var(--muted-text); font-size: 0.98rem; }
+
+        .empty-state {
+            margin-top: 16px;
+            border-radius: 22px;
+            padding: 30px 18px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px dashed rgba(255, 255, 255, 0.22);
+            color: var(--muted-text);
+            animation: fadeInUp 0.35s ease;
+        }
+        body.light-theme .empty-state { background: rgba(15, 23, 42, 0.03); border-color: rgba(15, 23, 42, 0.1); }
+        .empty-state i { font-size: 2rem; margin-bottom: 10px; display: block; }
+
+        /* === إعدادات السحب البسيطة جداً === */
+        .sortable-ghost {
+            opacity: 0.3 !important;
+            background: rgba(59, 130, 246, 0.15) !important;
+            border: 2px dashed var(--primary) !important;
+        }
+
+        .sortable-drag {
+            opacity: 1 !important;
+            box-shadow: var(--shadow-lg) !important;
+            cursor: grabbing !important;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 7, 18, 0.75);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            z-index: 1000;
+        }
+        .modal-overlay.show { display: flex; animation: fadeIn 0.22s ease; }
+
+        .settings-panel {
+            width: min(920px, 100%);
+            max-height: 95vh;
+            overflow: hidden;
+            background: #ffffff;
+            color: var(--text-dark);
+            border-radius: 26px;
+            box-shadow: 0 28px 60px rgba(0, 0, 0, 0.28);
+            display: flex;
+            flex-direction: column;
+            animation: scaleIn 0.22s ease;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 20px 22px 14px;
+            border-bottom: 1px solid var(--border-light);
+            flex-shrink: 0;
+        }
+        .settings-header h2 { margin: 0; font-size: 1.4rem; }
+        .settings-header p { margin: 6px 0 0; color: var(--text-muted-dark); font-size: 0.95rem; }
+
+        .close-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(15, 23, 42, 0.06);
+            cursor: pointer;
+            font-size: 1.15rem;
+            transition: background 0.22s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-btn:hover { background: rgba(15, 23, 42, 0.1); transform: translateY(-1px); }
+
+        .settings-body {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .tabs-sidebar {
+            border-left: 1px solid var(--border-light);
+            background: #f8fafc;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .tab-btn {
+            width: 100%;
+            text-align: right;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #0f172a;
+            border-radius: 14px;
+            padding: 14px 16px;
+            cursor: pointer;
+            font-family: 'Tajawal', Arial, sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            transition: all 0.22s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .tab-btn:hover { background: rgba(59, 130, 246, 0.08); }
+        .tab-btn.active {
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.18);
+            color: var(--primary-dark);
+        }
+
+        .tab-content-area { 
+            padding: 20px; 
+            overflow-y: auto;
+            background: #ffffff; 
+        }
+        .tab-panel { display: none; animation: fadeIn 0.22s ease; }
+        .tab-panel.active { display: block; }
+
+        .panel-title { margin: 0 0 8px; font-size: 1.2rem; font-weight: 800; }
+        .panel-desc { margin: 0 0 20px; color: var(--text-muted-dark); line-height: 1.7; }
+        .field { margin-bottom: 18px; }
+        .field label { display: block; margin-bottom: 8px; font-weight: 700; }
+
+        .field select, .field input[type="text"], .field input[type="range"] {
+            width: 100%;
+            border: 1px solid #d0d5dd;
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 1rem;
+            font-family: 'Tajawal', Arial, sans-serif;
+            background: #fff;
+            color: #111827;
+            outline: none;
+            transition: border-color 0.22s ease, box-shadow 0.22s ease;
+        }
+        .field select:focus, .field input[type="text"]:focus, .field input[type="range"]:focus {
+            border-color: rgba(59, 130, 246, 0.6);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .color-option {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+            transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+            justify-self: start;
+        }
+        .color-option:hover { transform: scale(1.06); }
+        .color-option.active {
+            border-color: #111827;
+            box-shadow: 0 0 0 4px rgba(17, 24, 39, 0.08);
+        }
+
+        .range-meta { margin-top: 8px; color: var(--text-muted-dark); font-size: 0.92rem; }
+
+        .version-history-list { list-style: none; padding: 0; margin: 0; }
+        .version-history-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        .version-history-item strong { display: block; margin-bottom: 6px; font-size: 1rem; }
+
+        .settings-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-light);
+            background: #fff;
+            flex-shrink: 0;
+        }
+        .settings-note { color: var(--text-muted-dark); font-size: 0.92rem; }
+        .footer-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .secondary-btn, .primary-btn {
+            border: none;
+            border-radius: 14px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: 'Tajawal', Arial, sans-serif;
+            transition: transform 0.2s ease, box-shadow 0.22s ease, opacity 0.22s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .secondary-btn { background: #eef2f7; color: #111827; }
+        .primary-btn {
+            color: #fff;
+            background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%);
+            box-shadow: 0 12px 24px rgba(34, 197, 94, 0.3);
+        }
+        .secondary-btn:hover, .primary-btn:hover { transform: translateY(-1px); }
+
+        .shake { animation: shake 0.35s; }
+        .task-enter { animation: fadeInUp 0.3s ease; }
+        .task-card.removing { animation: taskRemove 0.22s ease forwards; pointer-events: none; }
+        .task-card.toggling { animation: taskPulse 0.18s ease; }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(6px); }
+            50% { transform: translateX(-6px); }
+            75% { transform: translateX(4px); }
+            100% { transform: translateX(0); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes taskRemove {
+            0% { opacity: 1; transform: scale(1); max-height: 200px; margin: 12px 0; padding-top: 16px; padding-bottom: 16px; }
+            100% { opacity: 0; transform: scale(0.96); max-height: 0; margin: 0; padding-top: 0; padding-bottom: 0; }
+        }
+        @keyframes taskPulse { 0% { transform: scale(1); } 50% { transform: scale(0.985); } 100% { transform: scale(1); } }
+
+        @media (max-width: 768px) {
+            body { padding: 14px; }
+            .app-card { padding: 16px; border-radius: 22px; }
+            .input-row { grid-template-columns: 1fr; }
+            .add-btn { min-height: 52px; }
+            .task-card { padding: 14px; gap: 10px; align-items: flex-start; }
+            .task-actions { flex-direction: column; gap: 8px; }
+            
+            .modal-overlay { padding: 0; align-items: flex-end; }
+            .settings-panel {
+                max-height: 100vh;
+                height: 100vh;
+                border-radius: 24px 24px 0 0;
+            }
+            .settings-body {
+                grid-template-columns: 1fr;
+                min-height: 0;
+            }
+            .tabs-sidebar {
+                border-left: none;
+                border-bottom: 1px solid var(--border-light);
+                display: flex;
+                gap: 10px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                white-space: nowrap;
+                padding: 12px 16px;
+                flex-shrink: 0;
+            }
+            .tab-btn {
+                min-width: 140px;
+                margin-bottom: 0;
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+            .tab-content-area {
+                flex: 1;
+                overflow-y: auto;
+                padding: 16px;
+            }
+            .settings-footer {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 12px 16px;
+                gap: 10px;
+                flex-shrink: 0;
+            }
+            .footer-actions {
+                width: 100%;
+                flex-direction: column-reverse;
+            }
+            .secondary-btn, .primary-btn {
+                width: 100%;
+                padding: 14px;
+            }
+            .smart-tab {
+                font-size: 0.85rem;
+                padding: 10px 4px;
+                gap: 4px;
+            }
+            .smart-tab .count {
+                padding: 2px 6px;
+                font-size: 0.8rem;
+                min-width: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <div class="app-title" aria-label="اسم التطبيق">
+            <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
+                <h1>مدير المهام</h1>
+                <p>إدارة مهامك داخل مجموعات مع سحب وترتيب وحفظ محلي</p>
+            </div>
+        </div>
+        <div class="app-card">
+            <header class="app-header">
+                <div class="header-actions">
+                    <button class="icon-btn" id="openSettingsBtn" title="الإعدادات" aria-label="فتح الإعدادات">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="groups-tabs-container">
+                <div class="groups-tabs" id="groupsTabs"></div>
+                <button class="icon-btn" id="addGroupBtn" title="إضافة مجموعة جديدة" style="width: 44px; height: 44px; min-width: 44px;">
+                    <i class="fas fa-folder-plus"></i>
+                </button>
+            </div>
+
+            <div class="smart-tabs">
+                <button class="smart-tab active" data-filter="all">
+                    <i class="fas fa-list"></i>
+                    <span>الكل</span>
+                    <span class="count" id="countAll">0</span>
+                </button>
+                <button class="smart-tab" data-filter="completed">
+                    <i class="fas fa-check-circle"></i>
+                    <span>المكتملة</span>
+                    <span class="count" id="countCompleted">0</span>
+                </button>
+                <button class="smart-tab" data-filter="incomplete">
+                    <i class="fas fa-clock"></i>
+                    <span>غير المكتملة</span>
+                    <span class="count" id="countIncomplete">0</span>
+                </button>
+            </div>
+
+            <div class="input-row">
+                <input type="text" id="taskInput" class="task-input" placeholder="أدخل المهمة هنا" autocomplete="off" />
+                <button id="addTaskBtn" class="add-btn">
+                    <i class="fas fa-plus"></i> إضافة
+                </button>
+            </div>
+
+            <div id="taskList" class="sortable-list"></div>
+
+            <footer id="appFooter">الإصدار 2.5</footer>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="settingsModal">
+        <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+            <div class="settings-header">
+                <div>
+                    <h2 id="settingsTitle">الإعدادات</h2>
+                    <p>عدّل المظهر والخطوط. لا تنسَ الضغط على "حفظ التغييرات" في الأسفل.</p>
+                </div>
+                <button class="close-btn" id="closeSettingsBtn" aria-label="إغلاق الإعدادات">&times;</button>
+            </div>
+
+            <div class="settings-body">
+                <aside class="tabs-sidebar">
+                    <button class="tab-btn active" data-tab="backgroundTab"><span>الخلفية</span><i class="fas fa-image"></i></button>
+                    <button class="tab-btn" data-tab="tasksTab"><span>المهام</span><i class="fas fa-list-check"></i></button>
+                    <button class="tab-btn" data-tab="fontTab"><span>الخط</span><i class="fas fa-font"></i></button>
+                    <button class="tab-btn" data-tab="versionTab"><span>سجل الإصدارات</span><i class="fas fa-clock-rotate-left"></i></button>
+                </aside>
+
+                <div class="tab-content-area">
+                    <div id="backgroundTab" class="tab-panel active">
+                        <h3 class="panel-title">إعدادات الخلفية</h3>
+                        <div class="field">
+                            <label for="backgroundColor">اختر لون الخلفية</label>
+                            <select id="backgroundColor">
+                                <option value="black">أسود</option>
+                                <option value="white">أبيض</option>
+                                <option value="beige">بيج</option>
+                                <option value="current">أزرق (الحالي)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="tasksTab" class="tab-panel">
+                        <h3 class="panel-title">إعدادات المهام</h3>
+                        <div class="field">
+                            <label>اختر لون المهمة (12 لوناً هادئاً)</label>
+                            <div class="color-palette" id="colorPalette"></div>
+                        </div>
+                        <div class="field">
+                            <label for="customColor">أو أدخل كود لون مخصص (مثال: #FF0000)</label>
+                            <input type="text" id="customColor" placeholder="#RRGGBB" />
+                        </div>
+                        <div class="field">
+                            <label for="transparency">التحكم في الشفافية</label>
+                            <input type="range" id="transparency" min="0.2" max="1" step="0.1" value="1" />
+                            <div class="range-meta">القيمة الحالية: <span id="transparencyValue">1</span></div>
+                        </div>
+                    </div>
+
+                    <div id="fontTab" class="tab-panel">
+                        <h3 class="panel-title">إعدادات الخط</h3>
+                        <div class="field">
+                            <label for="fontColor">اختر لون الخط</label>
+                            <select id="fontColor">
+                                <option value="black">أسود</option>
+                                <option value="white">أبيض</option>
+                                <option value="blue">أزرق</option>
+                                <option value="red">أحمر</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="fontFamily">اختر نوع الخط</label>
+                            <select id="fontFamily">
+                                <option value="'Tajawal', sans-serif">Tajawal</option>
+                                <option value="'Arial', sans-serif">Arial</option>
+                                <option value="'Courier New', monospace">Courier New</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="fontSize">اختر حجم الخط</label>
+                            <select id="fontSize">
+                                <option value="16px">16px</option>
+                                <option value="18px">18px</option>
+                                <option value="20px">20px</option>
+                                <option value="24px">24px</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="versionTab" class="tab-panel">
+                        <h3 class="panel-title">سجل الإصدارات</h3>
+                        <ul class="version-history-list" id="versionHistoryList"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-footer">
+                <div class="settings-note">⚠️ يجب الضغط على "حفظ التغييرات" لتثبيت الإعدادات.</div>
+                <div class="footer-actions">
+                    <button class="secondary-btn" id="closeWithoutSaveBtn">إلغاء</button>
+                    <button class="primary-btn" id="saveSettingsBtn">
+                        <i class="fas fa-save" style="margin-left: 8px;"></i> حفظ التغييرات
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const taskList = document.getElementById('taskList');
+        const taskInput = document.getElementById('taskInput');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const groupsTabs = document.getElementById('groupsTabs');
+
+        const settingsModal = document.getElementById('settingsModal');
+        const openSettingsBtn = document.getElementById('openSettingsBtn');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        const closeWithoutSaveBtn = document.getElementById('closeWithoutSaveBtn');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+
+        const backgroundColorSelect = document.getElementById('backgroundColor');
+        const customColorInput = document.getElementById('customColor');
+        const transparencySlider = document.getElementById('transparency');
+        const transparencyValue = document.getElementById('transparencyValue');
+
+        const fontColorSelect = document.getElementById('fontColor');
+        const fontFamilySelect = document.getElementById('fontFamily');
+        const fontSizeSelect = document.getElementById('fontSize');
+
+        const appFooter = document.getElementById('appFooter');
+
+        const availableColors = [
+            '#457B9D', '#A8DADC', '#E9C46A', '#F4A261', '#E76F51', 
+            '#2A9D8F', '#264653', '#D4A5A5', '#9D8189', '#A8D5BA', 
+            '#F8E9A1', '#C9CCD5'
+        ];
+
+        const defaultVersionHistory = [
+            { version: "1.0", date: "01-10-2024", changes: "الإصدار الأولي" },
+            { version: "2.5", date: "04-06-2026", changes: "إضافة الضغط المطول (250ms) قبل بدء السحب لمنع السحب غير المقصود." }
+        ];
+
+        const defaultSettings = {
+            fontColor: 'white',
+            fontFamily: "'Tajawal', sans-serif",
+            fontSize: '18px',
+            backgroundColor: 'current',
+            customColor: '',
+            transparency: '1',
+            selectedColor: availableColors[0],
+            selectedTransparency: 1
+        };
+
+        let savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let savedGroups = JSON.parse(localStorage.getItem('groups'));
+        let groups = [];
+        
+        if (savedGroups) {
+            groups = savedGroups;
+        } else if (savedTasks.length > 0) {
+            groups = [{ id: 'group-' + Date.now(), name: 'المجموعة الرئيسية', tasks: savedTasks }];
+            localStorage.removeItem('tasks');
+        } else {
+            groups = [{ id: 'group-' + Date.now(), name: 'المجموعة الرئيسية', tasks: [] }];
+        }
+
+        let activeGroupId = localStorage.getItem('activeGroupId') || groups[0].id;
+        let versionHistory = JSON.parse(localStorage.getItem('versionHistory')) || defaultVersionHistory;
+        let userSettings = { ...defaultSettings, ...(JSON.parse(localStorage.getItem('userSettings')) || {}) };
+
+        let selectedColor = localStorage.getItem('selectedColor') || userSettings.selectedColor || availableColors[0];
+        let selectedTransparency = parseFloat(localStorage.getItem('selectedTransparency'));
+        selectedTransparency = isNaN(selectedTransparency) ? parseFloat(userSettings.selectedTransparency || 1) : selectedTransparency;
+
+        let currentFilter = 'all';
+        let sortableInstance = null;
+
+        function generateId() { return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`; }
+        function getActiveGroup() { return groups.find(g => g.id === activeGroupId) || groups[0]; }
+
+        function saveGroups() {
+            localStorage.setItem('groups', JSON.stringify(groups));
+            localStorage.setItem('activeGroupId', activeGroupId);
+        }
+
+        function isValidHexColor(value) { return /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(value.trim()); }
+
+        function hexToRgba(hex, alpha = 1) {
+            if (!hex) return `rgba(255,255,255,${alpha})`;
+            let normalizedHex = hex.replace('#', '').trim();
+            if (normalizedHex.length === 3) normalizedHex = normalizedHex.split('').map(ch => ch + ch).join('');
+            if (normalizedHex.length !== 6) return `rgba(255,255,255,${alpha})`;
+            const r = parseInt(normalizedHex.substring(0, 2), 16);
+            const g = parseInt(normalizedHex.substring(2, 4), 16);
+            const b = parseInt(normalizedHex.substring(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function getTaskBackground(task) {
+            const color = task.color || selectedColor || availableColors[0];
+            const alpha = task.transparency !== undefined ? task.transparency : selectedTransparency;
+            return `linear-gradient(135deg, ${hexToRgba(color, alpha)} 0%, ${hexToRgba(color, Math.max(alpha - 0.08, 0.18))} 100%)`;
+        }
+
+        function applyVisualSettings() {
+            let fontColorHex = '#ffffff';
+            if (userSettings.fontColor === 'black') fontColorHex = '#111827';
+            else if (userSettings.fontColor === 'white') fontColorHex = '#ffffff';
+            else if (userSettings.fontColor === 'blue') fontColorHex = '#3b82f6';
+            else if (userSettings.fontColor === 'red') fontColorHex = '#ef4444';
+            else fontColorHex = userSettings.fontColor;
+
+            document.documentElement.style.setProperty('--task-font-color', fontColorHex);
+            document.documentElement.style.setProperty('--task-font-family', userSettings.fontFamily || "'Tajawal', sans-serif");
+            document.documentElement.style.setProperty('--task-font-size', userSettings.fontSize || '18px');
+
+            const selectedTheme = userSettings.backgroundColor || 'current';
+            document.body.classList.remove('light-theme');
+
+            if (selectedTheme === 'current') document.body.style.background = 'linear-gradient(135deg, #223047 0%, #3498db 100%)';
+            else if (selectedTheme === 'black') document.body.style.background = '#0f172a';
+            else if (selectedTheme === 'white') { document.body.style.background = '#ffffff'; document.body.classList.add('light-theme'); }
+            else if (selectedTheme === 'beige') { document.body.style.background = '#f4efe6'; document.body.classList.add('light-theme'); }
+        }
+
+        function syncSettingsControls() {
+            backgroundColorSelect.value = userSettings.backgroundColor || 'current';
+            customColorInput.value = userSettings.customColor || '';
+            transparencySlider.value = userSettings.transparency || '1';
+            transparencyValue.textContent = transparencySlider.value;
+            fontColorSelect.value = userSettings.fontColor || 'white';
+            fontFamilySelect.value = userSettings.fontFamily || "'Tajawal', sans-serif";
+            fontSizeSelect.value = userSettings.fontSize || '18px';
+        }
+
+        function initializeColorPalette() {
+            const colorPalette = document.getElementById('colorPalette');
+            colorPalette.innerHTML = '';
+            availableColors.forEach(color => {
+                const colorOption = document.createElement('button');
+                colorOption.type = 'button';
+                colorOption.className = 'color-option';
+                colorOption.style.backgroundColor = color;
+                if (selectedColor.toLowerCase() === color.toLowerCase()) colorOption.classList.add('active');
+                colorOption.addEventListener('click', () => {
+                    selectedColor = color;
+                    customColorInput.value = color;
+                    highlightSelectedPaletteColor();
+                });
+                colorPalette.appendChild(colorOption);
+            });
+        }
+
+        function highlightSelectedPaletteColor() {
+            document.querySelectorAll('.color-option').forEach((option, index) => {
+                const color = availableColors[index];
+                option.classList.toggle('active', selectedColor.toLowerCase() === color.toLowerCase());
+            });
+        }
+
+        function getFilteredTasks() {
+            const group = getActiveGroup();
+            if (currentFilter === 'completed') return group.tasks.filter(task => task.completed);
+            if (currentFilter === 'incomplete') return group.tasks.filter(task => !task.completed);
+            return group.tasks;
+        }
+
+        function updateStats() {
+            const group = getActiveGroup();
+            const completed = group.tasks.filter(task => task.completed).length;
+            const incomplete = group.tasks.length - completed;
+
+            document.getElementById('countAll').textContent = group.tasks.length;
+            document.getElementById('countCompleted').textContent = completed;
+            document.getElementById('countIncomplete').textContent = incomplete;
+        }
+
+        function updateActiveTab() {
+            document.querySelectorAll('.smart-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.filter === currentFilter);
+            });
+        }
+
+        function renderGroupsTabs() {
+            groupsTabs.innerHTML = '';
+            groups.forEach(group => {
+                const btn = document.createElement('button');
+                btn.className = `group-tab ${group.id === activeGroupId ? 'active' : ''}`;
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = group.name;
+                btn.appendChild(nameSpan);
+
+                if (groups.length > 1) {
+                    const delBtn = document.createElement('span');
+                    delBtn.className = 'delete-group';
+                    delBtn.innerHTML = '&times;';
+                    delBtn.title = 'حذف المجموعة';
+                    delBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (confirm(`هل أنت متأكد من حذف مجموعة "${group.name}" وجميع مهامها؟`)) {
+                            groups = groups.filter(g => g.id !== group.id);
+                            if (activeGroupId === group.id) activeGroupId = groups[0].id;
+                            currentFilter = 'all';
+                            saveGroups();
+                            renderTasks();
+                        }
+                    });
+                    btn.appendChild(delBtn);
+                }
+
+                btn.addEventListener('click', () => {
+                    activeGroupId = group.id;
+                    currentFilter = 'all';
+                    saveGroups();
+                    renderTasks();
+                });
+
+                groupsTabs.appendChild(btn);
+            });
+        }
+
+        function createTaskElement(task) {
+            const taskCard = document.createElement('div');
+            taskCard.className = 'task-card task-enter';
+            if (task.completed) taskCard.classList.add('completed');
+            taskCard.dataset.id = task.id;
+            taskCard.style.background = getTaskBackground(task);
+
+            const createdText = task.createdAt ? `أضيفت: ${new Date(task.createdAt).toLocaleDateString('ar-EG')}` : '';
+
+            taskCard.innerHTML = `
+                <div class="task-main">
+                    <button class="status-btn" type="button" title="تبديل حالة المهمة" aria-label="تبديل حالة المهمة">
+                        <i class="fas ${task.completed ? 'fa-check-circle' : 'fa-circle'}"></i>
+                    </button>
+                    <div class="task-content">
+                        <span class="task-text" contenteditable="false">${escapeHtml(task.text)}</span>
+                        <div class="task-meta">${createdText}</div>
+                    </div>
+                </div>
+                <div class="task-actions">
+                    <button class="action-btn edit-btn" type="button" title="تعديل"><i class="far fa-edit"></i></button>
+                    <button class="action-btn delete-btn" type="button" title="حذف"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+
+            const deleteBtn = taskCard.querySelector('.delete-btn');
+            const editBtn = taskCard.querySelector('.edit-btn');
+            const statusBtn = taskCard.querySelector('.status-btn');
+            const taskText = taskCard.querySelector('.task-text');
+
+            deleteBtn.addEventListener('click', function (event) {
+                event.stopPropagation();
+                taskCard.classList.add('removing');
+                setTimeout(() => {
+                    const group = getActiveGroup();
+                    group.tasks = group.tasks.filter(t => t.id !== task.id);
+                    saveGroups();
+                    renderTasks();
+                }, 220);
+            });
+
+            editBtn.addEventListener('click', function (event) {
+                event.stopPropagation();
+                enterEditMode(task, taskCard, taskText);
+            });
+
+            statusBtn.addEventListener('click', function (event) {
+                event.stopPropagation();
+                toggleTaskCompletion(task, taskCard);
+            });
+
+            taskCard.addEventListener('dblclick', function () {
+                toggleTaskCompletion(task, taskCard);
+            });
+
+            return taskCard;
+        }
+
+        function enterEditMode(task, taskCard, taskText) {
+            if (taskText.getAttribute('contenteditable') === 'true') return;
+            taskCard.classList.add('editing');
+            if (sortableInstance) sortableInstance.option('disabled', true);
+
+            taskText.setAttribute('contenteditable', 'true');
+            taskText.focus();
+            
+            const range = document.createRange();
+            const selection = window.getSelection();
+            range.selectNodeContents(taskText);
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+
+            let isFinished = false;
+            function finishEdit() {
+                if (isFinished) return;
+                isFinished = true;
+                const updatedText = taskText.textContent.trim();
+                if (updatedText) {
+                    task.text = updatedText;
+                    saveGroups();
+                } else {
+                    taskText.textContent = task.text;
+                }
+                taskText.setAttribute('contenteditable', 'false');
+                taskCard.classList.remove('editing');
+                if (sortableInstance) sortableInstance.option('disabled', false);
+                renderTasks();
+                taskText.removeEventListener('keydown', handleKeydown);
+            }
+            function handleKeydown(event) {
+                if (event.key === 'Enter') { event.preventDefault(); taskText.blur(); }
+            }
+            taskText.addEventListener('keydown', handleKeydown);
+            taskText.addEventListener('blur', finishEdit, { once: true });
+        }
+
+        function toggleTaskCompletion(task, taskCard) {
+            taskCard.classList.add('toggling');
+            setTimeout(() => {
+                task.completed = !task.completed;
+                saveGroups();
+                renderTasks();
+            }, 160);
+        }
+
+        function renderTasks() {
+            updateStats();
+            updateActiveTab();
+            renderGroupsTabs();
+
+            const filteredTasks = getFilteredTasks();
+            taskList.innerHTML = '';
+
+            if (!filteredTasks.length) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.innerHTML = `<i class="fas fa-clipboard-list"></i><div>لا توجد مهام في هذه المجموعة حاليًا.</div>`;
+                taskList.appendChild(emptyState);
+                return;
+            }
+
+            filteredTasks.forEach(task => { taskList.appendChild(createTaskElement(task)); });
+        }
+
+        function addTask(taskValue) {
+            const group = getActiveGroup();
+            const newTask = {
+                id: generateId(),
+                text: taskValue,
+                completed: false,
+                color: selectedColor,
+                transparency: selectedTransparency,
+                createdAt: new Date().toISOString()
+            };
+
+            group.tasks.unshift(newTask);
+            saveGroups();
+            renderTasks();
+        }
+
+        function handleAddTask() {
+            const taskValue = taskInput.value.trim();
+            if (taskValue) {
+                addTask(taskValue);
+                taskInput.value = '';
+                taskInput.focus();
+            } else {
+                taskInput.classList.add('shake');
+                setTimeout(() => taskInput.classList.remove('shake'), 500);
+            }
+        }
+
+        function openSettings(tabId = 'backgroundTab') {
+            settingsModal.classList.add('show');
+            setActiveTab(tabId);
+        }
+
+        function closeSettings() { settingsModal.classList.remove('show'); }
+
+        function setActiveTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === tabId));
+        }
+
+        function renderVersionHistory() {
+            const list = document.getElementById('versionHistoryList');
+            list.innerHTML = '';
+            versionHistory.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'version-history-item';
+                li.innerHTML = `<strong>الإصدار ${item.version} - ${item.date}</strong><span>${escapeHtml(item.changes)}</span>`;
+                list.appendChild(li);
+            });
+        }
+
+        function saveSettings() {
+            try {
+                const customColorValue = customColorInput.value.trim();
+                userSettings.fontColor = fontColorSelect.value;
+                userSettings.fontFamily = fontFamilySelect.value;
+                userSettings.fontSize = fontSizeSelect.value;
+                userSettings.backgroundColor = backgroundColorSelect.value;
+                userSettings.customColor = customColorValue;
+                userSettings.transparency = transparencySlider.value;
+
+                if (customColorValue && isValidHexColor(customColorValue)) {
+                    selectedColor = customColorValue;
+                }
+                selectedTransparency = parseFloat(transparencySlider.value);
+                userSettings.selectedColor = selectedColor;
+                userSettings.selectedTransparency = selectedTransparency;
+
+                if (Array.isArray(groups)) {
+                    groups.forEach(g => {
+                        if (Array.isArray(g.tasks)) {
+                            g.tasks.forEach(task => {
+                                task.color = selectedColor;
+                                task.transparency = selectedTransparency;
+                            });
+                        }
+                    });
+                }
+
+                localStorage.setItem('userSettings', JSON.stringify(userSettings));
+                localStorage.setItem('selectedColor', selectedColor);
+                localStorage.setItem('selectedTransparency', selectedTransparency);
+                localStorage.setItem('groups', JSON.stringify(groups));
+
+                applyVisualSettings();
+                highlightSelectedPaletteColor();
+                renderTasks();
+                closeSettings();
+                alert("✅ تم حفظ وتطبيق الإعدادات على جميع المهام بنجاح!");
+                
+            } catch (e) {
+                console.error("تفاصيل خطأ الحفظ:", e);
+                alert("حدث خطأ أثناء حفظ الإعدادات: " + e.message);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // === إعدادات السحب مع الضغط المطول ===
+        function initSortable() {
+            sortableInstance = new Sortable(taskList, {
+                animation: 150, // حركة سلسة للبطاقات الأخرى
+                delay: 250, // ⭐ تأخير 250 ميلي ثانية (ربع ثانية) قبل بدء السحب
+                delayOnTouchOnly: true, // ⭐ التأخير فقط على الشاشات اللمسية (ليس الماوس)
+                touchStartThreshold: 5, // ⭐ إذا تحرك الإصبع أكثر من 5 بكسل قبل انتهاء التأخير، يلغى السحب
+                fallbackTolerance: 5, // ⭐ يتحمل حركة 5 بكسل قبل اعتبارها سحب فعلي
+                direction: 'vertical', // حركة عمودية فقط
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                filter: '.action-btn, .status-btn, .task-text[contenteditable="true"]', // ⭐ استثناء الأزرار من السحب
+                preventOnFilter: false,
+                
+            onEnd: function (evt) {
+                    // ملاحظة: لا نريد أن يؤثر ترتيب “المهام المعروضة فقط” بسبب الفلتر على المهام المخفية.
+                    // لذلك نستخدم كل المهام في المجموعة ونرتّبها بناءً على ترتيب العناصر التي ظهرت في DOM.
+                    const displayedIds = Array.from(taskList.children)
+                        .map(item => item.dataset.id)
+                        .filter(Boolean);
+
+                    const group = getActiveGroup();
+                    const idSet = new Set(displayedIds.map(String));
+
+                    const orderedDisplayed = group.tasks.filter(t => idSet.has(String(t.id)));
+                    // orderedDisplayed بالأساس نفس عناصر displayedIds لكن بالاعتماد على DOM order.
+                    const orderedByDom = displayedIds
+                        .map(id => group.tasks.find(t => String(t.id) === String(id)))
+                        .filter(Boolean);
+
+                    const remaining = group.tasks.filter(t => !idSet.has(String(t.id)));
+
+                    group.tasks = [...orderedByDom, ...remaining];
+                    saveGroups();
+                    renderTasks();
+                }
+            });
+        }
+
+        function loadSettings() {
+            userSettings = { ...defaultSettings, ...(JSON.parse(localStorage.getItem('userSettings')) || {}) };
+            
+            let savedColor = localStorage.getItem('selectedColor');
+            if (!savedColor || savedColor === '#00FF7F' || savedColor === '#22c55e') {
+                savedColor = '#457B9D';
+                localStorage.setItem('selectedColor', savedColor);
+            }
+            
+            selectedColor = savedColor || userSettings.selectedColor || '#457B9D';
+            
+            let savedTransparency = parseFloat(localStorage.getItem('selectedTransparency'));
+            selectedTransparency = isNaN(savedTransparency) ? parseFloat(userSettings.selectedTransparency || 1) : savedTransparency;
+            
+            syncSettingsControls();
+            applyVisualSettings();
+        }
+
+        taskInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') { event.preventDefault(); handleAddTask(); }
+        });
+
+        addTaskBtn.addEventListener('click', handleAddTask);
+
+        document.getElementById('addGroupBtn').addEventListener('click', () => {
+            const groupName = prompt('أدخل اسم المجموعة الجديدة:');
+            if (groupName && groupName.trim()) {
+                const newGroup = { id: 'group-' + Date.now(), name: groupName.trim(), tasks: [] };
+                groups.push(newGroup);
+                activeGroupId = newGroup.id;
+                currentFilter = 'all';
+                saveGroups();
+                renderTasks();
+            }
+        });
+
+        document.querySelectorAll('.smart-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                currentFilter = this.dataset.filter;
+                updateActiveTab();
+                renderTasks();
+            });
+        });
+
+        openSettingsBtn.addEventListener('click', () => openSettings('backgroundTab'));
+        closeSettingsBtn.addEventListener('click', closeSettings);
+        closeWithoutSaveBtn.addEventListener('click', closeSettings);
+        saveSettingsBtn.addEventListener('click', saveSettings);
+
+        settingsModal.addEventListener('click', function (event) { if (event.target === settingsModal) closeSettings(); });
+        document.addEventListener('keydown', function (event) { if (event.key === 'Escape' && settingsModal.classList.contains('show')) closeSettings(); });
+        transparencySlider.addEventListener('input', function () { transparencyValue.textContent = this.value; });
+        document.querySelectorAll('.tab-btn').forEach(button => { button.addEventListener('click', function () { setActiveTab(this.dataset.tab); }); });
+
+        loadSettings();
+        initializeColorPalette();
+        highlightSelectedPaletteColor();
+        renderVersionHistory();
+        renderTasks();
+        
+        const latest = versionHistory[0];
+        if (latest) appFooter.textContent = `الإصدار ${latest.version} - تاريخ ${latest.date}`;
+        
+        initSortable();
+    </script>
+</body>
+</html>
